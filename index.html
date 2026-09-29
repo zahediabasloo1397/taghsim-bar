@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<title>سیستم تقسیم بار</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <h1>سیستم تقسیم بار</h1>
+    <div class="sub">مدیریت شرکت‌ها، کارخانه‌ها، کرایه و پیشنهاد تقسیم بار</div>
+  </div>
+  <div class="top-actions">
+    <button class="btn ghost" id="exportBtn">خروجی پشتیبان</button>
+    <label class="btn ghost file-btn">ورود پشتیبان<input id="importFile" type="file" accept=".json"></label>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="allocation">تقسیم بار</button>
+  <button class="tab" data-tab="fares">تعریف کرایه</button>
+  <button class="tab" data-tab="companies">شرکت‌ها و سهم‌ها</button>
+  <button class="tab" data-tab="history">ثبت بار</button>
+</nav>
+
+<main>
+<section id="allocation" class="panel active">
+  <div class="card">
+    <h2>محاسبه تقسیم بار</h2>
+    <div class="form-grid">
+      <div><label>کارخانه</label><div class="combo" id="factoryCombo"></div></div>
+      <div><label>مبدأ</label><div class="combo" id="originCombo"></div></div>
+      <div><label>مقصد</label><div class="combo" id="destinationCombo"></div></div>
+      <div><label>تناژ بار</label>
+        <div class="tonnage-wrap"><input id="tonnage" type="number" min="25" max="100000" step="25" value="250"><span>تن</span></div>
+        <small>از ۲۵ تا ۱۰۰٬۰۰۰ تن، گام ۲۵ تن</small>
+      </div>
+      <div><label>روش امتیازدهی</label>
+        <select id="method">
+          <option value="fare">کرایه پایه بالاتر = اولویت بیشتر</option>
+          <option value="deficit">عقب‌ماندگی = اولویت بیشتر</option>
+          <option value="mixed" selected>ترکیبی: ۶۰٪ کرایه + ۴۰٪ عقب‌ماندگی</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="calculateBtn">محاسبه تقسیم بار</button>
+      <span id="fareInfo" class="info"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-head"><h2>پیشنهاد بار شرکت‌ها</h2><input id="resultSearch" class="search" placeholder="جستجوی شرکت..."></div>
+    <div class="table-scroll">
+      <table id="resultTable">
+        <thead><tr>
+          <th>اولویت</th><th>شرکت</th><th>سهم هدف %</th><th>تناژ قبلی</th><th>کرایه پایه</th>
+          <th>امتیاز کرایه</th><th>عقب‌ماندگی</th><th>امتیاز نهایی</th><th>پیشنهاد بار</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="fares" class="panel">
+  <div class="card">
+    <h2>تعریف کرایه پایه</h2>
+    <div class="form-grid">
+      <div><label>شهر مقصد</label><div class="combo" id="fareCityCombo"></div></div>
+      <div><label>کارخانه</label><div class="combo" id="fareFactoryCombo"></div></div>
+      <div><label>کرایه پایه (تومان/تن)</label><input id="fareValue" type="number" min="0" step="1000" placeholder="مثلاً 850000"></div>
+      <div class="align-end"><button class="btn primary" id="saveFare">ذخیره کرایه</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-head"><h2>کرایه‌های تعریف‌شده</h2><input id="fareSearch" class="search" placeholder="جستجو شهر یا کارخانه..."></div>
+    <div class="table-scroll"><table id="fareTable"><thead><tr><th>شهر مقصد</th><th>کارخانه</th><th>کرایه پایه</th><th>عملیات</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section id="companies" class="panel">
+  <div class="card">
+    <h2>شرکت‌ها و سهم هدف</h2>
+    <p class="muted">درصدها را می‌توانی دستی تغییر بدهی. تغییرات در مرورگر ذخیره می‌شود.</p>
+    <div class="table-scroll"><table id="companyTable"><thead><tr><th>ردیف</th><th>شرکت</th><th>فعال</th><th>فولاد سیرجان ایرانیان %</th><th>فولاد مشیز %</th><th>گهر زمین بردسیر %</th></tr></thead><tbody></tbody></table></div>
+    <div class="actions"><button class="btn primary" id="saveCompanies">ذخیره شرکت‌ها</button><span id="shareStatus" class="info"></span></div>
+  </div>
+</section>
+
+<section id="history" class="panel">
+  <div class="card">
+    <h2>ثبت بار انجام‌شده</h2>
+    <div class="form-grid">
+      <div><label>تاریخ</label><input id="hDate" type="date"></div>
+      <div><label>کارخانه</label><div class="combo" id="historyFactoryCombo"></div></div>
+      <div><label>مبدأ</label><div class="combo" id="historyOriginCombo"></div></div>
+      <div><label>مقصد</label><div class="combo" id="historyDestinationCombo"></div></div>
+      <div><label>شرکت</label><div class="combo" id="historyCompanyCombo"></div></div>
+      <div><label>تناژ</label><input id="hTonnage" type="number" min="25" max="100000" step="25" value="25"></div>
+    </div>
+    <div class="actions"><button class="btn primary" id="saveHistory">ثبت بار</button></div>
+  </div>
+  <div class="card">
+    <div class="table-head"><h2>سوابق ثبت‌شده</h2><input id="historySearch" class="search" placeholder="جستجو..."></div>
+    <div class="table-scroll"><table id="historyTable"><thead><tr><th>تاریخ</th><th>کارخانه</th><th>مبدأ</th><th>مقصد</th><th>شرکت</th><th>تناژ</th><th>عملیات</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+</main>
+<div id="toast"></div>
+<script src="app.js"></script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(console.error);}</script>
+</body>
+</html>
