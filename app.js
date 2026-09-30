@@ -14,6 +14,51 @@ function toast(s){const t=document.getElementById("toast");t.textContent=s;t.cla
 function fmt(n){return Number(n||0).toLocaleString("fa-IR",{maximumFractionDigits:2})}
 function norm(s){return String(s||"").trim().toLowerCase()}
 
+
+// تاریخ شمسی (جلالی) - بدون نیاز به کتابخانه خارجی
+function toPersianDigits(s){return String(s).replace(/0/g,"۰").replace(/1/g,"۱").replace(/2/g,"۲").replace(/3/g,"۳").replace(/4/g,"۴").replace(/5/g,"۵").replace(/6/g,"۶").replace(/7/g,"۷").replace(/8/g,"۸").replace(/9/g,"۹");}
+function toEnglishDigits(s){return String(s).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));}
+function gregorianToJalali(gy,gm,gd){
+  const gdm=[0,31,59,90,120,151,181,212,243,273,304,334];
+  let gy2=gy+(gm>2?1:0), days=355666+365*gy+Math.floor((gy2+3)/4)-Math.floor((gy2+99)/100)+Math.floor((gy2+399)/400)+gd+gdm[gm-1];
+  let jy=-1595+33*Math.floor(days/12053); days%=12053; jy+=4*Math.floor(days/1461); days%=1461;
+  if(days>365){jy+=Math.floor((days-1)/365); days=(days-1)%365;}
+  let jm=days<186?1+Math.floor(days/31):7+Math.floor((days-186)/30); let jd=1+(days<186?days%31:(days-186)%30);
+  return [jy,jm,jd];
+}
+function jalaliToGregorian(jy,jm,jd){
+  jy+=1595; let days=-355668+365*jy+Math.floor(jy/33)*8+Math.floor(((jy%33)+3)/4)+jd+(jm<7?(jm-1)*31:(jm-7)*30+186);
+  let gy=400*Math.floor(days/146097); days%=146097;
+  if(days>36524){gy+=100*Math.floor(--days/36524); days%=36524; if(days>=365)days++;}
+  gy+=4*Math.floor(days/1461); days%=1461;
+  if(days>365){gy+=Math.floor((days-1)/365); days=(days-1)%365;}
+  let gd=days+1, sal=[0,31,(gy%4===0&&gy%100!==0)||gy%400===0?29:28,31,30,31,30,31,31,30,31,30,31], gm=1;
+  while(gd>sal[gm]){gd-=sal[gm];gm++;}
+  return [gy,gm,gd];
+}
+function todayJalali(){const d=new Date(),j=gregorianToJalali(d.getFullYear(),d.getMonth()+1,d.getDate());return `${j[0]}/${String(j[1]).padStart(2,"0")}/${String(j[2]).padStart(2,"0")}`;}
+function normalizeJalaliDate(v){
+  v=toEnglishDigits(String(v||"").trim()).replace(/[.\-]/g,"/");
+  const m=v.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/); if(!m)return null;
+  const jy=+m[1],jm=+m[2],jd=+m[3];
+  if(jy<1300||jy>1500||jm<1||jm>12||jd<1||jd>31)return null;
+  const g=jalaliToGregorian(jy,jm,jd); const back=gregorianToJalali(...g);
+  if(back[0]!==jy||back[1]!==jm||back[2]!==jd)return null;
+  return `${jy}/${String(jm).padStart(2,"0")}/${String(jd).padStart(2,"0")}`;
+}
+function displayJalaliDate(v){
+  if(!v)return "";
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m){const j=gregorianToJalali(+m[1],+m[2],+m[3]);return toPersianDigits(`${j[0]}/${String(j[1]).padStart(2,"0")}/${String(j[2]).padStart(2,"0")}`)}
+  return toPersianDigits(v);
+}
+function setupJalaliDate(){
+  const el=document.getElementById("hDate"); if(!el)return;
+  if(!el.value)el.value=toPersianDigits(todayJalali());
+  el.addEventListener("input",()=>{let v=toEnglishDigits(el.value).replace(/[^0-9\/]/g,"");if(v.length===4&&!v.includes("/"))v+="/";if(v.length===7&&v[4]==="/")v+="/";el.value=toPersianDigits(v.slice(0,10));});
+  el.addEventListener("blur",()=>{const n=normalizeJalaliDate(el.value);if(n)el.value=toPersianDigits(n);else if(el.value.trim())toast("تاریخ شمسی معتبر نیست؛ مثال: ۱۴۰۵/۰۷/۰۸");});
+}
+
 function combo(elId,items,getLabel,onPick,initial=""){
   const el=document.getElementById(elId); el.innerHTML="";
   const input=document.createElement("input"); input.autocomplete="off"; input.placeholder="جستجو و انتخاب...";
@@ -110,7 +155,7 @@ function saveCompanies(){
 function renderHistory(){
   const q=norm(document.getElementById("historySearch").value);const tb=document.querySelector("#historyTable tbody");tb.innerHTML="";
   DB.history.filter(h=>!q||Object.values(h).some(v=>norm(v).includes(q))).forEach((h,i)=>{
-    const tr=document.createElement("tr");tr.innerHTML=`<td>${h.date}</td><td>${h.factory}</td><td>${h.origin}</td><td>${h.destination}</td><td>${h.company}</td><td>${fmt(h.tonnage)}</td><td><button class="danger" onclick="deleteHistory(${i})">حذف</button></td>`;tb.appendChild(tr)
+    const tr=document.createElement("tr");tr.innerHTML=`<td>${displayJalaliDate(h.date)}</td><td>${h.factory}</td><td>${h.origin}</td><td>${h.destination}</td><td>${h.company}</td><td>${fmt(h.tonnage)}</td><td><button class="danger" onclick="deleteHistory(${i})">حذف</button></td>`;tb.appendChild(tr)
   })
 }
 window.deleteHistory=i=>{DB.history.splice(i,1);saveDB();renderHistory();toast("سابقه حذف شد")};
@@ -139,8 +184,9 @@ document.getElementById("saveFare").onclick=()=>{
 };
 document.getElementById("saveCompanies").onclick=saveCompanies;
 document.getElementById("saveHistory").onclick=()=>{
-  const date=document.getElementById("hDate").value||new Date().toISOString().slice(0,10),ton=Number(document.getElementById("hTonnage").value||0);
+  const rawDate=document.getElementById("hDate").value||todayJalali(), date=normalizeJalaliDate(rawDate)||rawDate, ton=Number(document.getElementById("hTonnage").value||0);
   const company=document.querySelector("#historyCompanyCombo input").value.trim();
+  if(!normalizeJalaliDate(date)){toast("تاریخ شمسی معتبر وارد کن؛ مثال: ۱۴۰۵/۰۷/۰۸");return}
   if(!company||ton<25||ton>100000||ton%25!==0){toast("شرکت و تناژ معتبر را وارد کن.");return}
   DB.history.push({date,factory:state.historyFactory,origin:state.historyOrigin,destination:state.historyDestination,company,tonnage:ton});
   saveDB();renderHistory();toast("بار ثبت شد")
@@ -150,5 +196,5 @@ document.getElementById("exportBtn").onclick=exportDB;
 fetch("data.json").then(r=>r.json()).then(d=>{
   const saved=localStorage.getItem(KEY);
   if(saved){loadDB()}else{DB={...d,history:[]};saveDB()}
-  setupCombos();renderCompanies();renderFares();renderHistory();calculate();
+  setupCombos();renderCompanies();renderFares();renderHistory();setupJalaliDate();calculate();
 }).catch(e=>{loadDB();setupCombos();renderCompanies();renderFares();renderHistory()});
