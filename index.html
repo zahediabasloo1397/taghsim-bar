@@ -10,8 +10,27 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>سیستم تقسیم بار</title>
 <link rel="stylesheet" href="style.css">
+<style>
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#ecfeff,#f8fafc)}
+.login-card{width:min(420px,100%);background:#fff;border-radius:20px;padding:30px;box-shadow:0 18px 50px rgba(15,23,42,.12);border:1px solid #e2e8f0;text-align:right}
+.login-card h2{margin:0 0 8px;color:#0f766e}.login-card p{margin:0 0 22px;color:#64748b}.login-card label{display:block;margin:12px 0 6px;font-weight:700}.login-card input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}.login-card button{width:100%;margin-top:18px}.login-error{min-height:24px;margin-top:12px;color:#dc2626;font-size:.9rem}
+</style>
+
 </head>
 <body>
+<section id="loginScreen" aria-label="ورود به سامانه">
+  <div class="login-card">
+    <h2>ورود به سامانه</h2>
+    <p>برای ورود به سیستم تقسیم بار، نام کاربری و رمز عبور را وارد کنید.</p>
+    <label for="loginUser">نام کاربری</label>
+    <input id="loginUser" type="text" autocomplete="username" placeholder="نام کاربری">
+    <label for="loginPass">رمز عبور</label>
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="رمز عبور">
+    <button class="btn primary" id="loginBtn">ورود</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</section>
+<div id="appShell" style="display:none">
 <header class="topbar">
   <div>
     <h1>سیستم تقسیم بار</h1>
@@ -19,6 +38,7 @@
   </div>
   <div class="top-actions">
     <button class="btn ghost" id="exportBtn">خروجی پشتیبان</button>
+    <button class="btn ghost" id="logoutBtn">خروج</button>
     <label class="btn ghost file-btn">ورود پشتیبان<input id="importFile" type="file" accept=".json"></label>
   </div>
 </header>
@@ -115,6 +135,51 @@
 </section>
 </main>
 <div id="toast"></div>
+</div>
+<script>
+(function(){
+  const USERNAME = "anjoman-mashiz";
+  const PASSWORD_SHA256 = "f0f0cd6f9263bd5f9f9e64468aaf6b4617e2ab27dff55299b801fd4a3b872dbe";
+  const loginScreen = document.getElementById("loginScreen");
+  const appShell = document.getElementById("appShell");
+  const userInput = document.getElementById("loginUser");
+  const passInput = document.getElementById("loginPass");
+  const loginBtn = document.getElementById("loginBtn");
+  const errorBox = document.getElementById("loginError");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  function showApp(){ loginScreen.style.display="none"; appShell.style.display=""; }
+  function showLogin(){
+    loginScreen.style.display="flex"; appShell.style.display="none";
+    userInput.value=""; passInput.value=""; userInput.focus();
+  }
+  async function sha256(text){
+    const data=new TextEncoder().encode(text);
+    const hash=await crypto.subtle.digest("SHA-256",data);
+    return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
+  async function login(){
+    errorBox.textContent="";
+    const username=userInput.value.trim(), password=passInput.value;
+    if(!username || !password){ errorBox.textContent="نام کاربری و رمز عبور را وارد کنید."; return; }
+    loginBtn.disabled=true;
+    try{
+      const hash=await sha256(password);
+      if(username===USERNAME && hash===PASSWORD_SHA256){
+        sessionStorage.setItem("anjoman_logged_in","1"); showApp();
+      }else{
+        errorBox.textContent="نام کاربری یا رمز عبور اشتباه است.";
+        passInput.value=""; passInput.focus();
+      }
+    }catch(e){ errorBox.textContent="خطا در ورود. دوباره تلاش کنید."; }
+    finally{ loginBtn.disabled=false; }
+  }
+  loginBtn.addEventListener("click",login);
+  [userInput,passInput].forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter")login();}));
+  logoutBtn.addEventListener("click",()=>{sessionStorage.removeItem("anjoman_logged_in");showLogin();});
+  if(sessionStorage.getItem("anjoman_logged_in")==="1") showApp(); else showLogin();
+})();
+</script>
 <script src="app.js"></script>
 <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(console.error);}</script>
 </body>
