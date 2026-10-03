@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>ورود به سیستم تقسیم بار</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f3f6f8;
+  font-family:Tahoma,Arial,sans-serif;
+  color:#222;
+}
+
+.login-box{
+  width:90%;
+  max-width:420px;
+  background:white;
+  padding:30px;
+  border-radius:18px;
+  box-shadow:0 10px 35px rgba(0,0,0,.12);
+}
+
+h1{
+  margin:0 0 10px;
+  text-align:center;
+  font-size:25px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#777;
+  margin-bottom:25px;
+}
+
+label{
+  display:block;
+  margin:14px 0 7px;
+  font-weight:bold;
+}
+
+input{
+  width:100%;
+  padding:13px;
+  border:1px solid #ccc;
+  border-radius:10px;
+  font-size:16px;
+  direction:ltr;
+  text-align:left;
+}
+
+button{
+  width:100%;
+  margin-top:20px;
+  padding:14px;
+  border:0;
+  border-radius:10px;
+  background:#0f766e;
+  color:white;
+  font-size:17px;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+#error{
+  display:none;
+  margin-top:15px;
+  padding:10px;
+  border-radius:8px;
+  background:#fee2e2;
+  color:#b91c1c;
+  text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+
+  <h1>سیستم تقسیم بار</h1>
+
+  <div class="subtitle">
+    برای ورود، نام کاربری و رمز عبور را وارد کنید
+  </div>
+
+  <form id="loginForm">
+
+    <label for="username">نام کاربری</label>
+    <input
+      id="username"
+      type="text"
+      autocomplete="username"
+      placeholder="نام کاربری"
+      required
+    >
+
+    <label for="password">رمز عبور</label>
+    <input
+      id="password"
+      type="password"
+      autocomplete="current-password"
+      placeholder="رمز عبور"
+      required
+    >
+
+    <button type="submit">ورود به سیستم</button>
+
+    <div id="error">
+      نام کاربری یا رمز عبور اشتباه است.
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+
+const ADMIN_USER = "anjoman-mashiz";
+const ADMIN_PASSWORD = "T9907118z@";
+
+document.getElementById("loginForm").addEventListener("submit", function(e){
+
+  e.preventDefault();
+
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value;
+  const error = document.getElementById("error");
+
+  if(user === ADMIN_USER && pass === ADMIN_PASSWORD){
+
+    sessionStorage.setItem("taghsimbar_auth", "1");
+
+    window.location.href = "system.html";
+
+  }else{
+
+    error.style.display = "block";
+
+  }
+
+});
+
+</script>
+
+</body>
+</html>
